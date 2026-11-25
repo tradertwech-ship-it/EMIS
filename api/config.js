@@ -6,6 +6,6 @@ module.exports = async (req, res) => {
   const url = process.env.SUPABASE_URL || '', key = process.env.SUPABASE_ANON_KEY || '';
   const ice = [{ urls: 'stun:stun.l.google.com:19302' }];
   if (process.env.TURN_URL) ice.push({ urls: process.env.TURN_URL.split(','), username: process.env.TURN_USERNAME || '', credential: process.env.TURN_CREDENTIAL || '' });
-  const features = { search: true, webGoogle: !!(process.env.GOOGLE_API_KEY && process.env.GOOGLE_CSE_ID), tts: !!process.env.GOOGLE_API_KEY, ai: !!process.env.ANTHROPIC_API_KEY };
+  const features = { search: true, webGoogle: !!(process.env.GOOGLE_API_KEY && process.env.GOOGLE_CSE_ID), tts: !!(process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY), ai: !!process.env.ANTHROPIC_API_KEY };
   res.status(200).json({ ok: !!(url && key), url, key, ice, features });
 };
