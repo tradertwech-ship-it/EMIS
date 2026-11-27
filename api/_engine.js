@@ -63,19 +63,30 @@ async function handle(b) {
       const token = mem.get(TOK) || ''; const o = { result };
       if (token !== startTok) o.token = token;
       if (!b.nv) { o.view = S._view(); }
+      o.pings = S._pushCollect();
       const uid = S._pass(); o.pass = uid ? L.makePass(c.secret, uid) : '';
       o.queued = (JSON.parse(mem.get(KEY) || '{}').outbox || []).some(x => x.status === 'queued');
       return o;
     }, { token: String(b.t || ''), device: String(b.d || '').slice(0, 60) }));
   } catch (e) { return { status: 503, json: { error: 'The server is busy or the database could not be reached. Please try again.' } }; }
   const o = res.out; if (o.queued) await flushOutbox().catch(() => { });
-  delete o.queued; return { status: 200, json: o };
+  if (o.pings && o.pings.length) await sendPings(o.pings);
+  delete o.queued; delete o.pings; return { status: 200, json: o };
 }
+
+/* silent phone pings (the notification text is fetched by the phone from /api/push) */
+async function sendPings(eps) {
+  const c = C(); if (!c.secret || !eps || !eps.length) return;
+  const dead = await USL.Push.ping(c.secret, c.devEmail, eps, fetchImpl).catch(() => []);
+  if (dead.length) await exclusive(() => transact(async S => S._pushDrop(dead))).catch(() => { });
+}
+async function pushPending(endpoint) { const r = await exclusive(() => transact(async S => S._pushPending(String(endpoint)))); return r.out; }
+function pushKey() { const c = C(); return c.secret ? USL.Push.keys(c.secret).pub : ''; }
 
 /* payment webhook: ask the provider about the reference, then let the app decide */
 async function gatewayEvent(ref) {
   const c = C(); if (!L.storeReady(c)) return false;
-  await exclusive(() => transact(async S => S._gatewayEvent(String(ref))));
-  await flushOutbox().catch(() => { }); return true;
+  const g = await exclusive(() => transact(async S => { const x = S._gatewayEvent(String(ref)); return { x, pings: S._pushCollect() }; }));
+  await flushOutbox().catch(() => { }); await sendPings(g.out.pings); return true;
 }
-module.exports = { handle, gatewayEvent, setFetch: f => { fetchImpl = f; }, flushOutbox, _mem: mem };
+module.exports = { handle, gatewayEvent, pushPending, pushKey, setFetch: f => { fetchImpl = f; }, flushOutbox, _mem: mem };
