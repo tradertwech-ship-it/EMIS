@@ -1,0 +1,15 @@
+{
+  "name": "EMIS ONLINE ACADEMY",
+  "short_name": "EMIS Academy",
+  "description": "Notes, papers, live lessons and an AI tutor for S3 to S6.",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2b1b63",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
